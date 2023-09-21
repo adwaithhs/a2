@@ -1,5 +1,6 @@
 #include <dirent.h> 
 #include <stdio.h> 
+#include <string.h>
 
 int main(void) {
   DIR *d;
@@ -12,5 +13,6 @@ int main(void) {
     }
     closedir(d);
   }
+  printf("%lu\n", strlen("test"));
   return(0);
 }

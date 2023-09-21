@@ -3,6 +3,8 @@
 #include <dirent.h> 
 #include <mpi.h>
 
+#define DT_REG 8
+
 uint64_t *read_input(char *file) {
     FILE *fs = fopen(file, "r");
     uint64_t n;
@@ -15,11 +17,6 @@ uint64_t *read_input(char *file) {
     return data;
 }
 
-int main(void) {
-  
-  return(0);
-}
-
 int main(int argc, char** argv) {
     int rank, size, message_Item;
 
@@ -29,17 +26,18 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    DIR *d;
-    struct dirent *dir;
-    d = opendir(input_file);
-    if (d) {
+    if (rank == 0) {
+        DIR *d;
+        struct dirent *dir;
+        d = opendir(input_file);
         while ((dir = readdir(d)) != NULL) {
             if (dir->d_type == DT_REG) {
-                printf("%s\n", dir->d_name);
+                //file = dir->d_name;
             }
         }
         closedir(d);
     }
+
     if(rank == 0){
         message_Item = 42;
         MPI_Send(&message_Item, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);
