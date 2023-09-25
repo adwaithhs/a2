@@ -25,6 +25,22 @@ void *read_input(char *file, uint64_t ** p_data, uint64_t *p_n) {
     }
 }
 
+uint64_t find(uint64_t *S, uint64_t p, uint64_t x) {
+    uint64_t l = 0;
+    uint64_t r = p-1;
+    while (l < r) {
+        uint64_t m = l + (r - l) / 2;
+        if (S[m] == x)
+            return m;
+        if (S[m] < x)
+            l = m + 1;
+        else
+            r = m;
+    }
+    return r;
+
+}
+
 int main(int argc, char** argv) {
     int rank, p, message_Item;
 
@@ -54,27 +70,37 @@ int main(int argc, char** argv) {
     read_input(file, &data, &n);
 
     qsort(data, n, sizeof(uint64_t), comp);
+    
     uint64_t* ps = malloc(p*sizeof(uint64_t));
     uint64_t* pseudo_splitters;
+    uint64_t* real_splitters = malloc((p-1)*sizeof(uint64_t));
     if (rank == 0) {
         pseudo_splitters = malloc(p*p*sizeof(uint64_t));
     }
-    MPI_Gather(ps, p, MPI_INT64_T, pseudo_splitters, p, MPI_INT64_T, 0, MPI_COMM_WORLD);
+    MPI_Gather(ps, p, MPI_UINT64_T, pseudo_splitters, p, MPI_UINT64_T, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
         qsort(pseudo_splitters, p*p, sizeof(uint64_t), comp);
+        for (int i = 0; i < p - 1; i++) {
+            real_splitters[i] = pseudo_splitters[(i+1)*p];
+        }
     }
+    MPI_Bcast(real_splitters, p-1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
+    
+    uint64_t* part_sizes = malloc(p*sizeof(uint64_t));
+    uint64_t prev = 0;
+    for (int i = 0; i < p - 1; i++) {
+        uint64_t j = find(data, n, real_splitters[i]);
+        part_sizes[i] = j - prev;
+        prev = j;
+    }
+    part_sizes[p-1] = n - prev;
+    uint64_t* recv_sizes = malloc(p*sizeof(uint64_t));
+    
+    MPI_Alltoall(part_sizes, 1, MPI_UINT64_T, recv_sizes, 1, MPI_UINT64_T, MPI_COMM_WORLD);
 
-    if(rank == 0){
-        message_Item = 42;
-        MPI_Send(&message_Item, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);
-        printf("Message Sent: %d\n", message_Item);
-    }
-
-    else if(rank == 1){
-        MPI_Recv(&message_Item, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Message Received: %d\n", message_Item);
-    }
+    
+    
 
     MPI_Finalize();
     return 0;

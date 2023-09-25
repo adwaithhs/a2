@@ -14,6 +14,22 @@ void *read_input(char *file, uint64_t ** p_data, uint64_t *p_n) {
     }
 }
 
+int find(int *S, int p, int x) {
+    int l = -1;
+    int r = p-1;
+    while (l < r) {
+        int m = l + (r - l) / 2;
+        if (S[m] == x)
+            return m;
+        if (S[m] < x)
+            l = m + 1;
+        else
+            r = m;
+    }
+    return r;
+
+}
+
 int main(void) {
   DIR *d;
   struct dirent *dir;
@@ -34,5 +50,14 @@ int main(void) {
     printf("%" PRIu64 "\n", data[i]);
   }
   
+  int a[] = {10,20,30,40,50,60};
+
+  printf("%d\n", find(a, 6, 3));
+  printf("%d\n", find(a, 6, 13));
+  printf("%d\n", find(a, 6, 23));
+  printf("%d\n", find(a, 6, 43));
+  printf("%d\n", find(a, 6, 53));
+  printf("%d\n", find(a, 6, 63));
+
   return(0);
 }
