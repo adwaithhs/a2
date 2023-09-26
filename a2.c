@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <dirent.h> 
 #include <mpi.h>
 
-#define DT_REG 8
+// #define DT_REG 8
 
 int comp(const void *elem1, const void *elem2) 
 {
@@ -99,8 +100,38 @@ int main(int argc, char** argv) {
     
     MPI_Alltoall(part_sizes, 1, MPI_UINT64_T, recv_sizes, 1, MPI_UINT64_T, MPI_COMM_WORLD);
 
+    uint64_t m = 0;
+    for (int i = 0; i < p; i++) {
+        m += recv_sizes[i];
+    }
+    MPI_Request* reqs = malloc(p*sizeof(MPI_Request));
+    MPI_Request* reqs2 = malloc(p*sizeof(MPI_Request));
+    uint64_t* sorted = malloc(m*sizeof(uint64_t));
+    uint64_t recv_start = 0;
+    uint64_t send_start = 0;
+    for (int other = 0; other < rank; other++) {
+        MPI_Irecv(sorted + recv_start, recv_sizes[other], MPI_UINT64_T, other, 1, MPI_COMM_WORLD, reqs + other);
+        MPI_Isend(data + send_start, part_sizes[other], MPI_UINT64_T, other, 1, MPI_COMM_WORLD, reqs2 + other);
+        recv_start += recv_sizes[other];
+        send_start += part_sizes[other];
+    }
+
+    memcpy(sorted + recv_start, data + send_start, part_sizes[rank]*sizeof(uint64_t));
+    recv_start += recv_sizes[rank];
+    send_start += part_sizes[rank];
+
+    for (int other = rank + 1; other < p; other++) {
+        MPI_Isend(data + send_start, part_sizes[other], MPI_UINT64_T, other, 1, MPI_COMM_WORLD, reqs2 + other);
+        MPI_Irecv(sorted + recv_start, recv_sizes[other], MPI_UINT64_T, other, 1, MPI_COMM_WORLD, reqs + other);
+        recv_start += recv_sizes[other];
+        send_start += part_sizes[other];
+    }
     
-    
+    for (int i = 0; i < p; i++) {
+        if (i == rank) continue;
+        MPI_Wait(reqs + i, MPI_STATUS_IGNORE);
+        MPI_Wait(reqs2 + i, MPI_STATUS_IGNORE);
+    }
 
     MPI_Finalize();
     return 0;
