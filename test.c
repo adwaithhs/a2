@@ -30,6 +30,20 @@ int find(int *S, int p, int x) {
 
 }
 
+char* join(char *path, char *file) {
+    int n = strlen(path);
+    int m = strlen(file);
+    char *ret = malloc((n+m+2)*sizeof(char));
+    memcpy(ret, path, n*sizeof(char));
+    if (path[n-1] == '/') {
+        memcpy(ret + n, file, (m+1)*sizeof(char));
+    } else {
+        ret[n] = '/';
+        memcpy(ret + n + 1, file, (m+1)*sizeof(char));
+    }
+    return ret;
+}
+
 int main(void) {
   DIR *d;
   struct dirent *dir;
@@ -58,6 +72,9 @@ int main(void) {
   printf("%d\n", find(a, 6, 43));
   printf("%d\n", find(a, 6, 53));
   printf("%d\n", find(a, 6, 63));
+
+  printf("%s\n", join("input", "file"));
+  printf("%s\n", join("input/", "file"));
 
   return(0);
 }
