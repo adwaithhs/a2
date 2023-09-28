@@ -47,6 +47,13 @@ char* join(char *path, char *file) {
     return ret;
 }
 
+void print_array(uint64_t *arr, uint64_t n) {
+    for (int i = 0; i < n; i++) {
+        printf("%" PRIu64 " ", arr[i]);
+    }
+    printf("\n");
+}
+
 int main(int argc, char** argv) {
     static struct option long_options[] = {
         {"inputpath",  required_argument, 0, 'i'},
@@ -107,10 +114,13 @@ int main(int argc, char** argv) {
     fclose(fs);
 
     qsort(data, n, sizeof(uint64_t), comp);
-    
+
     uint64_t* ps = malloc(p*sizeof(uint64_t));
     uint64_t* pseudo_splitters;
     uint64_t* real_splitters = malloc((p-1)*sizeof(uint64_t));
+    for (int i = 0; i < p; i++) {
+        ps[i] = data[i*n/p];
+    }
     if (rank == 0) {
         pseudo_splitters = malloc(p*p*sizeof(uint64_t));
     }
@@ -185,7 +195,7 @@ int main(int argc, char** argv) {
             }
         }
         final[j] = min;
-        idx[i]++;
+        idx[min_pos]++;
     }
     char outfile[20];
     sprintf(outfile, "out_%d.txt", rank);
