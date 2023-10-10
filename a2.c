@@ -10,8 +10,8 @@
 
 int comp(const void *elem1, const void *elem2) 
 {
-    uint32_t f = *((uint32_t*)elem1);
-    uint32_t s = *((uint32_t*)elem2);
+    uint64_t f = *((uint64_t*)elem1);
+    uint64_t s = *((uint64_t*)elem2);
     if (f > s) return  1;
     if (f < s) return -1;
     return 0;
